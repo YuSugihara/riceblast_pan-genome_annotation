@@ -1,6 +1,6 @@
 # Rice Blast Pan‑genome Annotation Methods Pipeline
 
-![Pipeline overview (Figure 1)](figures/Figure_1_Annotation_pipeline.pdf)
+[Pipeline overview (Figure 1)](figures/Figure_1_Annotation_pipeline.pdf)
 *Figure 1. Overview of the end-to-end annotation pipeline (see Execution script and Pipeline workflow sections for commands).*
 
 This repository provides a step-by-step annotation workflow and Materials & Methods (MM) for assembling a non-redundant gene set for each *Magnaporthe oryzae* genome. The pipeline integrates BRAKER, Helixer, and protein alignments (miniprot), producing a merged GFF3, CDS, and protein FASTA for each assembly. All commands and input/output layouts are included for reproducibility.
@@ -53,7 +53,7 @@ The following software and Python packages are required to run the pipeline. Eac
   - [2. miniprot searches (00_miniprot)](#2-miniprot-searches-00_miniprot)
   - [3. Extract CDS from each source (10_cds)](#3-extract-cds-from-each-source-10_cds)
   - [4. QC each GFF (20_gff_qc)](#4-qc-each-gff-20_gff_qc)
-  - [5. Filter bad models (30_filtered_gff)](#5-filter-bad-models-30_filtered_gff)
+  - [5. Filter gene models (30_filtered_gff)](#5-filter-gene-models-30_filtered_gff)
   - [6. Remove overlaps to define non-redundant gene sets (40_non_overlap_gff)](#6-remove-overlaps-to-define-non-redundant-gene-sets-40_non_overlap_gff)
   - [7. Retain conserved proteins (Helixer ↔ 70-15 RefSeq)](#7-retain-conserved-proteins-helixer--70-15-refseq)
   - [8. Helixer-unique effectors overlapping BRAKER (50_helixer_uniq_effectors)](#8-helixer-unique-effectors-overlapping-braker-50_helixer_uniq_effectors)
@@ -596,26 +596,6 @@ gzip results/10_cds/${PREFIX}/${PREFIX}.braker.fa \
      results/10_cds/${PREFIX}/${PREFIX}.helixer_secretome.fa \
      results/10_cds/${PREFIX}/${PREFIX}.miniprot.fa
 ```
-
----
-
-## Parameter notes & tips
-
-* **miniprot thresholds** (`--outs`, `-p`) are conservative defaults; consider relaxing for divergent clades.
-* **QC thresholds** (`150,180,195` nt; `10,25,50%` masked) provide three bands for reporting; filtering currently removes models failing the strictest band (shorter than 150 nt; masked over 25%). Adjust as needed.
-* **Overlap precedence** encodes a *trust order*; change the `bedtools subtract` sequence to alter this.
-* **Parallelism**: `-t 2` (per miniprot) × `xargs -P 4` ≈ modest CPU load; scale per hardware.
-* **Spaces in paths**: if your filenames can contain spaces, prefer `find ... -print0 | xargs -0 -P ...`.
-
----
-
-## File naming conventions
-
-* `PREFIX`: `basename(assembly .fa)`; used to namespace all outputs.
-* QC reports: `results/20_gff_qc/PREFIX/PREFIX.<source>_qc.{gff,txt}`
-* Filtered GFFs: `results/30_filtered_gff/PREFIX/PREFIX.<source>_qc.filtered.gff`
-* Final merged GFF: `results/60_merged/PREFIX_merged.gff`
-* Final sequences: `results/70_extracted_seq/{protein,cds}/PREFIX_{protein,cds}.fa`
 
 ---
 
