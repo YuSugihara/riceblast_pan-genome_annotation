@@ -3,6 +3,7 @@
 <img src="figures/Figure_1_Annotation_pipeline.png" width=800>
 *Figure 1. Overview of the end-to-end annotation pipeline.*
 
+
 This repository provides a step-by-step annotation workflow and Materials & Methods (MM) for assembling a non-redundant gene set for each *Magnaporthe oryzae* genome. The pipeline integrates BRAKER, Helixer, and protein alignments (miniprot), producing a merged GFF3, CDS, and protein FASTA for each assembly. All commands and input/output layouts are included for reproducibility.
 
 ## Dependencies
@@ -22,8 +23,7 @@ The following software and Python packages are required to run the pipeline. Eac
 | pandas            | 2.2.1    | [pandas](https://pandas.pydata.org/) |
 | biopython         | 1.83     | [biopython](https://biopython.org/) |
 | pyfastx           | 2.1.0    | [pyfastx](https://github.com/lmdu/pyfastx) |
-| Helixer           |          | [Helixer](https://github.com/weberlab-hhu/Helixer) |
-| Singularity       |          | [Singularity](https://sylabs.io/singularity/) |
+| Helixer           | 0.3.2    | [Helixer](https://github.com/weberlab-hhu/Helixer) |
 
 ---
 
@@ -126,6 +126,7 @@ function get_helixer_fasta() {
   gffread -y ./Helixer/00_raw/Proteomes/${PREFIX}_Helixer.protein.fa \
           -g ./Frozen_assemblies/${PREFIX}.fa \
           ./Helixer/00_raw/GFF/${PREFIX}_Helixer.gff
+
   gffread -x ./Helixer/00_raw/Transcriptomes/${PREFIX}_Helixer.cds.fa \
           -g ./Frozen_assemblies/${PREFIX}.fa \
           ./Helixer/00_raw/GFF/${PREFIX}_Helixer.gff
@@ -221,9 +222,11 @@ effector_datasets/                  # Other curated effector/secretome panels
 
 ## Step-by-step pipeline
 
-### 0. Build secretome dataset
+### 0. Build secretome and characterized protein dataset
 
-#### a. 70-15 _Magnaporthe oryzae_ secretome dataset
+#### a. _Magnaporthe oryzae_ Secretome Dataset
+
+To build the secretome dataset for _Magnaporthe oryzae_ (strain 70-15, MG8), extract the relevant protein sequences using the following command:
 
 ```bash
 cat Yan_et_al_2023_Supplemental_Data_Set_S7.txt | \
@@ -231,7 +234,12 @@ cat Yan_et_al_2023_Supplemental_Data_Set_S7.txt | \
   > M_oryzae_MG8_XiaYan_secretome.fa
 ```
 
-*This command reads protein IDs from the list and extracts the corresponding sequences from the 70-15 (MG8) proteome (Magnaporthe_oryzae.MG8.pep.all.fa).*
+*This command reads protein IDs from the supplemental list and extracts the corresponding sequences from the 70-15 (MG8) proteome (`Magnaporthe_oryzae.MG8.pep.all.fa`).*
+
+Other datasets:
+- `zif_effectors.fa`: Zif effector dataset published in [De la Concepcion et al., 2023](https://doi.org/10.1371/journal.ppat.1012277)
+- `Bentham_et_al_2021_journal.ppat.1009957.s006.with_AVR-PikD_O23.fa`: APikL effector dataset published in [Bentham et al., 2021](https://doi.org/10.1371/journal.ppat.1009957) and AVR-Pik_O23 sequence published in [Sugihara et al., 2023](https://doi.org/10.1371/journal.pbio.3001945)
+- `AVR-Mgk1_variants.fa`: AVR-Mgk1 published in [Sugihara et al., 2023](https://doi.org/10.1371/journal.pbio.3001945) and its homologs
 
 #### b. Merge and deduplicate BRAKER and Helixer secretomes from all isolates
 
@@ -487,7 +495,13 @@ gffread --ids results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.gff
 ```
 
-*Rationale:* Give precedence to BRAKER models, then add non-overlapping Helixer secretome models (likely effectors), then miniprot rescues, and finally additional Helixer proteome models.
+*Rationale:* Give precedence to BRAKER models, then add non-overlapping Helixer secretome models, then miniprot annotations, and finally additional Helixer proteome models.
+
+**About `40_clean_up_miniprot_annotation.py`:**
+
+This script is used to further filter the miniprot-derived gene models. It takes as input a GFF file (with miniprot annotations) and the corresponding CDS FASTA file. For each locus (typically a cluster of overlapping miniprot alignments), it checks whether the predicted CDS ends with a valid stop codon (`TAG`, `TAA`, or `TGA`). If at least one transcript in the locus has a valid stop codon, only those transcripts are retained; otherwise, all transcripts for that locus are kept. The script outputs a list of transcript IDs to retain, which is then used with `gffread --ids` to extract the cleaned-up features from the original GFF.
+
+---
 
 ### 7. Retain conserved proteins (Helixer ↔ 70-15 RefSeq)
 
