@@ -494,7 +494,7 @@ gffread --ids results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.gff
 ```
 
-*Rationale:* Give precedence to BRAKER models, then add non-overlapping Helixer secretome models, then miniprot annotations, and finally additional Heliker proteome models.
+*Rationale:* Give precedence to BRAKER models, then add non-overlapping Helixer secretome models, then miniprot annotations, and finally additional Helixer proteome models.
 
 **About `40_clean_up_miniprot_annotation.py`:**
 
@@ -542,8 +542,6 @@ gffread --ids results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc
 **About `41_filter_diamond_results.py`:**
 
 This script filters the DIAMOND BLASTP results to retain only Helixer gene models that are similar to characterized 70-15 proteins. It takes as input the DIAMOND tabular output and the Helixer proteome FASTA file. For each hit, it checks if the sequence identity is greater than 30% and the query (RefSeq) coverage is over 50%. If these criteria are met, the Helixer gene is considered a reliable match and is retained. The script outputs a tab-separated summary of matching pairs to stdout and the corresponding Heliker protein sequences to stderr. The resulting list of Helixer IDs is then used to extract the corresponding GFF features for downstream merging.
-
-This step ensures that only well-supported Helixer gene models, with similarity to known characterized proteins, are included in the final non-redundant gene set.
 
 ---
 
@@ -616,4 +614,106 @@ gffread --sort-alpha --cluster-only --force-exons \
 ./70_rename_ids.py ${PREFIX} results/60_merged/temp/${PREFIX}_temp.gff \
   > results/60_merged/${PREFIX}_merged.gff
 ```
+
+**About `70_rename_ids.py`:**
+
+This script takes a merged GFF file and systematically renames all gene, transcript, exon, and CDS IDs to a consistent, project-specific format.  
+- Each gene is assigned a unique identifier: `${PREFIX}_g00001`, `${PREFIX}_g00002`, etc.
+- Transcripts are named as `${PREFIX}_g00001.t1`, `${PREFIX}_g00001.t2`, etc.
+- Exons and CDS features are named as `${PREFIX}_g00001.t1.exon1`, `${PREFIX}_g00001.t1.CDS1`, etc.
+
+---
+
+### 10. Export final sequences (70\_extracted\_seq)
+
+```bash
+gffread -y results/70_extracted_seq/protein/${PREFIX}_protein.fa \
+        -g ./Frozen_assemblies/${PREFIX}.fa \
+        results/60_merged/${PREFIX}_merged.gff
+
+gffread -x results/70_extracted_seq/cds/${PREFIX}_cds.fa \
+        -g ./Frozen_assemblies/${PREFIX}.fa \
+        results/60_merged/${PREFIX}_merged.gff
+```
+
+---
+
+## Appendix
+
+### GFF and annotation file manipulation tips
+
+This section provides practical tips and example commands for working with GFF3 and related annotation files, especially for extracting, filtering, and manipulating gene models.
+
+#### Extracting features by attribute
+
+- **Extract all mRNA features from a GFF3 file:**
+  ```bash
+  grep 'mRNA' input.gff > output.mrna.gff
+  ```
+
+#### Removing overlapping features
+
+- **Remove features in file A that overlap any feature in file B using bedtools:**
+  ```bash
+  bedtools subtract -A -a fileA.gff -b fileB.gff > fileA.nonoverlap.gff
+  ```
+  - `-A`: Remove the entire feature in A if any overlap with B is found (not just the overlapping part).
+
+#### Extracting IDs from GFF attributes
+
+- **Extract the ID attribute from the 9th column of a GFF3 file:**
+  ```bash
+  cut -f9 file.gff | cut -d ';' -f1 | cut -d '=' -f2 > ids.txt
+  ```
+
+#### Extracting features by ID list
+
+- **Extract features from a GFF file by a list of IDs using gffread:**
+  ```bash
+  gffread --ids ids.txt input.gff > output.filtered.gff
+  ```
+  - `--ids`: Provide a file with one ID per line.
+
+- **Extract features and cluster transcripts into loci, removing redundant isoforms:**
+  ```bash
+  gffread -M -K --ids ids.txt input.gff > output.filtered.gff
+  ```
+  - `-M` / `--merge`: Cluster the input transcripts into loci, discarding "redundant" transcripts (those with the same exact introns and fully contained or equal boundaries).
+  - `-K`: For use with `-M`, also discard as redundant the shorter, fully contained transcripts (intron chains matching a part of the container). This helps to keep only the longest or most representative isoform per locus.
+
+#### Extracting sequences from GFF and genome
+
+- **Extract CDS sequences:**
+  ```bash
+  gffread -x output.cds.fa -g genome.fa input.gff
+  ```
+  - `-x`: Output CDS FASTA.
+  - `-g`: Reference genome.
+
+- **Extract protein sequences:**
+  ```bash
+  gffread -y output.protein.fa -g genome.fa input.gff
+  ```
+  - `-y`: Output protein FASTA.
+  - `-g`: Reference genome.
+
+#### Deduplicating FASTA files
+
+- **Remove duplicate sequences from a FASTA file using seqkit:**
+  ```bash
+  seqkit rmdup -s -i -P input.fa > output.uniq.fa
+  ```
+  - `-s`: Remove duplicates by sequence.
+  - `-i`: Ignore case.
+  - `-P`: Only consider the positive strand.
+
+#### Merging and sorting GFF files with clustering
+
+- **Merge, sort, and cluster GFF files, ensuring all exons are present:**
+  ```bash
+  gffread --sort-alpha --cluster-only --force-exons input1.gff input2.gff > merged.gff
+  ```
+  - `--sort-alpha`: Sorts features alphabetically by sequence name and feature ID.
+  - `--cluster-only`: Clusters transcripts into loci without merging or discarding any.
+  - `--force-exons`: Ensures exon features are explicitly included for all transcripts.
 
