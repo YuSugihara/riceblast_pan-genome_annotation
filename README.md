@@ -35,14 +35,13 @@ The following software and Python packages are required to run the pipeline. Eac
 - [Signal peptide extraction (placeholder)](#signal-peptide-extraction-placeholder)
 
 **Sections under preparation by Yu Sugihara:**
+- [Dependencies](#dependencies)
 - [Running Helixer](#running-helixer)
   - [1. Prepare Input FASTA Files](#1-prepare-input-fasta-files)
   - [2. Run Helixer with Singularity](#2-run-helixer-with-singularity)
   - [3. Extract Protein and CDS Sequences](#3-extract-protein-and-cds-sequences)
   - [4. Filter Helixer Annotations](#4-filter-helixer-annotations)
   - [5. Output layout for Helixer annotation](#5-output-layout-for-helixer-annotation)
-- [Dependencies](#dependencies)
-- [Table of Contents](#table-of-contents)
 - [Expected layout for inputs](#expected-layout-for-inputs)
 - [Step-by-step pipeline](#step-by-step-pipeline)
   - [0. Build secretome dataset](#0-build-secretome-dataset)
@@ -55,7 +54,7 @@ The following software and Python packages are required to run the pipeline. Eac
   - [4. QC each GFF (20_gff_qc)](#4-qc-each-gff-20_gff_qc)
   - [5. Filter gene models (30_filtered_gff)](#5-filter-gene-models-30_filtered_gff)
   - [6. Remove overlaps to define non-redundant gene sets (40_non_overlap_gff)](#6-remove-overlaps-to-define-non-redundant-gene-sets-40_non_overlap_gff)
-  - [7. Retain conserved proteins (Helixer ↔ 70-15 RefSeq)](#7-retain-conserved-proteins-helixer--70-15-refseq)
+  - [7. Retain characterized proteins (Helixer ↔ 70-15 RefSeq)](#7-retain-characterized-proteins-helixer--70-15-refseq)
   - [8. Helixer-unique effectors overlapping BRAKER (50_helixer_uniq_effectors)](#8-helixer-unique-effectors-overlapping-braker-50_helixer_uniq_effectors)
   - [9. Merge all evidence and rename IDs (60_merged)](#9-merge-all-evidence-and-rename-ids-60_merged)
   - [10. Export final sequences (70_extracted_seq)](#10-export-final-sequences-70_extracted_seq)
@@ -396,7 +395,7 @@ grep -v 'not_multiple_of_3' ${OUTDIR}/20_gff_qc/${PREFIX}/${PREFIX}.miniprot_qc.
 - [`bedtools subtract`](https://bedtools.readthedocs.io/en/latest/content/tools/subtract.html) with `-A` removes entire features from the first input file (A) if they overlap with the second input file (B).
 - `cut` is used to extract gene IDs from the GFF files.
 
-1. **Helixer secretome vs BRAKER**
+**a. Helixer secretome vs BRAKER**
 
 ```bash
 # Extract mRNA features from Helixer secretome
@@ -415,7 +414,7 @@ cut -f9 results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_secretome_qc.filt
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_secretome_qc.filtered.non_overlap.txt
 ```
 
-2. **miniprot vs BRAKER & Helixer secretome**
+**b. miniprot vs BRAKER & Helixer secretome**
 
 ```bash
 # Extract mRNA features from miniprot
@@ -437,7 +436,7 @@ cut -f9 results/40_non_overlap_gff/${PREFIX}/${PREFIX}.miniprot_qc.filtered.mRNA
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.miniprot_qc.filtered.non_overlap.txt
 ```
 
-3. **Helixer proteome vs BRAKER, Helixer secretome, and miniprot**
+**c. Helixer proteome vs BRAKER, Helixer secretome, and miniprot**
 
 ```bash
 # Extract mRNA features from Helixer proteome
@@ -462,7 +461,7 @@ cut -f9 results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filte
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.txt
 ```
 
-4. **Extract non-redundant features**
+**d. Extract non-redundant features**
 
 - `gffread --ids` extracts features from a GFF file based on a list of IDs.
 
@@ -495,7 +494,7 @@ gffread --ids results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.gff
 ```
 
-*Rationale:* Give precedence to BRAKER models, then add non-overlapping Helixer secretome models, then miniprot annotations, and finally additional Helixer proteome models.
+*Rationale:* Give precedence to BRAKER models, then add non-overlapping Helixer secretome models, then miniprot annotations, and finally additional Heliker proteome models.
 
 **About `40_clean_up_miniprot_annotation.py`:**
 
@@ -503,12 +502,12 @@ This script is used to further filter the miniprot-derived gene models. It takes
 
 ---
 
-### 7. Retain conserved proteins (Helixer ↔ 70-15 RefSeq)
+### 7. Retain characterized proteins (Helixer ↔ 70-15 RefSeq)
 
 **Objective:** keep Helixer proteome models that show high similarity to characterized **70‑15** proteins.
 
 ```bash
-# Translate Helixer proteome subset and make a DIAMOND DB
+# Extract Helixer proteome FASTA and make a DIAMOND DB
 gffread -y results/40_non_overlap_gff/${PREFIX}/diamond/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.faa \
         -g ./Frozen_assemblies/${PREFIX}.fa \
         results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.gff
@@ -540,16 +539,29 @@ gffread --ids results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc
   > results/40_non_overlap_gff/${PREFIX}/${PREFIX}.helixer_proteome_qc.filtered.non_overlap.70-15_refseq.gff
 ```
 
+**About `41_filter_diamond_results.py`:**
+
+This script filters the DIAMOND BLASTP results to retain only Helixer gene models that are similar to characterized 70-15 proteins. It takes as input the DIAMOND tabular output and the Helixer proteome FASTA file. For each hit, it checks if the sequence identity is greater than 30% and the query (RefSeq) coverage is over 50%. If these criteria are met, the Helixer gene is considered a reliable match and is retained. The script outputs a tab-separated summary of matching pairs to stdout and the corresponding Heliker protein sequences to stderr. The resulting list of Helixer IDs is then used to extract the corresponding GFF features for downstream merging.
+
+This step ensures that only well-supported Helixer gene models, with similarity to known characterized proteins, are included in the final non-redundant gene set.
+
+---
+
 ### 8. Helixer‑unique effectors overlapping BRAKER (50\_helixer\_uniq\_effectors)
 
-**Objective:** identify Helixer secretome models that **overlap** BRAKER loci (potential effectors missing in BRAKER protein sets), then extract their sequences.
+**Objective:** identify Helixer secretome models that **overlap** BRAKER loci (potential effectors missing signal peptides in BRAKER proteins), then extract their sequences.
 
 ```bash
 gffcompare -p ${PREFIX} -T \
   -o results/50_helixer_uniq_effectors/${PREFIX}/${PREFIX}_50_gffcompare \
   results/30_filtered_gff/${PREFIX}/${PREFIX}.braker_qc.filtered.gff \
   results/30_filtered_gff/${PREFIX}/${PREFIX}.helixer_secretome_qc.filtered.gff
+```
 
+- `-p ${PREFIX}`: Sets the prefix for the output files.
+- `-T`: Disables generation of `.tmap` and `.refmap` files.
+
+```bash
 ./50_check_overlapping_effectors.py \
   results/50_helixer_uniq_effectors/${PREFIX}/${PREFIX}_50_gffcompare.loci \
   ./Proteomes/${PREFIX}.proteins.fa \
@@ -558,7 +570,13 @@ gffcompare -p ${PREFIX} -T \
   ./Helixer/20_filtered/Secretomes/${PREFIX}_Helixer.secretome_filtered.fa \
   1> results/50_helixer_uniq_effectors/${PREFIX}/${PREFIX}_helixer_uniq_effectors.tsv \
   2> results/50_helixer_uniq_effectors/${PREFIX}/${PREFIX}_helixer_uniq_effectors.txt
+```
 
+**About `50_check_overlapping_effectors.py`:**
+
+This script identifies Helixer-predicted secreted proteins that overlap with BRAKER loci but are not present in the BRAKER secretome. 
+
+```bash
 # Select and translate those Helixer‑unique effectors
 gffread --ids results/50_helixer_uniq_effectors/${PREFIX}/${PREFIX}_helixer_uniq_effectors.txt \
   results/30_filtered_gff/${PREFIX}/${PREFIX}.helixer_secretome_qc.filtered.gff \
@@ -581,104 +599,21 @@ gffread -M -K \
   results/50_helixer_uniq_effectors/${PREFIX}/${PREFIX}_helixer_uniq_effectors.gff \
   > results/60_merged/temp/${PREFIX}_helixer_temp.gff
 
-# Merge: BRAKER (base) + Helixer (temp) + miniprot cleaned
+# Merge: BRAKER + Helixer (temp) + miniprot cleaned
 gffread --sort-alpha --cluster-only --force-exons \
   results/30_filtered_gff/${PREFIX}/${PREFIX}.braker_qc.filtered.gff \
   results/60_merged/temp/${PREFIX}_helixer_temp.gff \
   results/40_non_overlap_gff/${PREFIX}/${PREFIX}.miniprot_qc.filtered.non_overlap.cleaned_up.gff \
   > results/60_merged/temp/${PREFIX}_temp.gff
+```
 
+- `--sort-alpha`: Sorts features alphabetically by sequence name and feature ID, ensuring a consistent order in the merged GFF.
+- `--cluster-only`: Clusters transcripts into loci without merging or discarding any, preserving all input features.
+- `--force-exons`: Ensures that exon features are explicitly included for all transcripts in the output, even if missing in the input.
+
+```bash
 # Rename to stable per‑project IDs
 ./70_rename_ids.py ${PREFIX} results/60_merged/temp/${PREFIX}_temp.gff \
   > results/60_merged/${PREFIX}_merged.gff
 ```
-
-### 10. Export final sequences (70\_extracted\_seq)
-
-```bash
-gffread -y results/70_extracted_seq/protein/${PREFIX}_protein.fa \
-        -g ./Frozen_assemblies/${PREFIX}.fa \
-        results/60_merged/${PREFIX}_merged.gff
-
-gffread -x results/70_extracted_seq/cds/${PREFIX}_cds.fa \
-        -g ./Frozen_assemblies/${PREFIX}.fa \
-        results/60_merged/${PREFIX}_merged.gff
-
-# Tidy: compress intermediate CDS sets from step 10
-gzip results/10_cds/${PREFIX}/${PREFIX}.braker.fa \
-     results/10_cds/${PREFIX}/${PREFIX}.helixer_proteome.fa \
-     results/10_cds/${PREFIX}/${PREFIX}.helixer_secretome.fa \
-     results/10_cds/${PREFIX}/${PREFIX}.miniprot.fa
-```
-
----
-
-## Appendix
-
-### GFF and annotation file manipulation tips
-
-This section provides practical tips and example commands for working with GFF3 and related annotation files, especially for extracting, filtering, and manipulating gene models.
-
-#### Extracting features by attribute
-
-- **Extract all mRNA features from a GFF3 file:**
-  ```bash
-  grep 'mRNA' input.gff > output.mrna.gff
-  ```
-
-#### Removing overlapping features
-
-- **Remove features in file A that overlap any feature in file B using bedtools:**
-  ```bash
-  bedtools subtract -A -a fileA.gff -b fileB.gff > fileA.nonoverlap.gff
-  ```
-  - `-A`: Remove the entire feature in A if any overlap with B is found (not just the overlapping part).
-
-#### Extracting IDs from GFF attributes
-
-- **Extract the ID attribute from the 9th column of a GFF3 file:**
-  ```bash
-  cut -f9 file.gff | cut -d ';' -f1 | cut -d '=' -f2 > ids.txt
-  ```
-
-#### Extracting features by ID list
-
-- **Extract features from a GFF file by a list of IDs using gffread:**
-  ```bash
-  gffread --ids ids.txt input.gff > output.filtered.gff
-  ```
-  - `--ids`: Provide a file with one ID per line.
-
-- **Extract features and cluster transcripts into loci, removing redundant isoforms:**
-  ```bash
-  gffread -M -K --ids ids.txt input.gff > output.filtered.gff
-  ```
-  - `-M` / `--merge`: Cluster the input transcripts into loci, discarding "redundant" transcripts (those with the same exact introns and fully contained or equal boundaries).
-  - `-K`: For use with `-M`, also discard as redundant the shorter, fully contained transcripts (intron chains matching a part of the container). This helps to keep only the longest or most representative isoform per locus.
-
-#### Extracting sequences from GFF and genome
-
-- **Extract CDS sequences:**
-  ```bash
-  gffread -x output.cds.fa -g genome.fa input.gff
-  ```
-  - `-x`: Output CDS FASTA.
-  - `-g`: Reference genome.
-
-- **Extract protein sequences:**
-  ```bash
-  gffread -y output.protein.fa -g genome.fa input.gff
-  ```
-  - `-y`: Output protein FASTA.
-  - `-g`: Reference genome.
-
-#### Deduplicating FASTA files
-
-- **Remove duplicate sequences from a FASTA file using seqkit:**
-  ```bash
-  seqkit rmdup -s -i -P input.fa > output.uniq.fa
-  ```
-  - `-s`: Remove duplicates by sequence.
-  - `-i`: Ignore case.
-  - `-P`: Only consider the positive strand.
 
