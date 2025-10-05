@@ -6,27 +6,6 @@
 
 This repository provides a step-by-step annotation workflow and Materials & Methods (MM) for assembling a non-redundant gene set for each *Magnaporthe oryzae* genome. The pipeline integrates BRAKER, Helixer, and protein alignments (miniprot), producing a merged GFF3, CDS, and protein FASTA for each assembly. All commands and input/output layouts are included for reproducibility.
 
-## Dependencies
-
-The following software and Python packages are required to run the pipeline. Each program or package is listed on a separate line for clarity.
-
-| Program / Package | Version  | Description / Link |
-|-------------------|----------|--------------------|
-| samtools          | 1.20     | [samtools](http://www.htslib.org/) |
-| seqkit            | 2.8.1    | [seqkit](https://bioinf.shenwei.me/seqkit/) |
-| gffread           | 0.12.7   | [gffread](https://github.com/gpertea/gffread) |
-| miniprot          | 0.13     | [miniprot](https://github.com/lh3/miniprot) |
-| bedtools          | 2.31.1   | [bedtools](https://bedtools.readthedocs.io/) |
-| diamond           | 2.1.9    | [diamond](https://github.com/bbuchfink/diamond) |
-| gffcompare        | 0.12.6   | [gffcompare](https://ccb.jhu.edu/software/stringtie/gffcompare.shtml) |
-| Python 3          | 3.10.14  | [python.org](https://www.python.org/) |
-| pandas            | 2.2.1    | [pandas](https://pandas.pydata.org/) |
-| biopython         | 1.83     | [biopython](https://biopython.org/) |
-| pyfastx           | 2.1.0    | [pyfastx](https://github.com/lmdu/pyfastx) |
-| Helixer           | 0.3.2    | [Helixer](https://github.com/weberlab-hhu/Helixer) |
-
----
-
 ## Table of Contents
 
 **Sections under preparation by Joe Win:**
@@ -50,3 +29,23 @@ The following software and Python packages are required to run the pipeline. Eac
   - [9. Export final sequences (70_extracted_seq)](docs/9_export_final_sequences.md)
 - [Appendix (notes & tips)](docs/appendix.md)
 
+## Dependencies
+
+The following software and Python packages are required to run the pipeline. Each program or package is listed on a separate line for clarity.
+
+| Program / Package | Version  | Description / Link |
+|-------------------|----------|--------------------|
+| samtools          | 1.20     | [samtools](http://www.htslib.org/) |
+| seqkit            | 2.8.1    | [seqkit](https://bioinf.shenwei.me/seqkit/) |
+| gffread           | 0.12.7   | [gffread](https://github.com/gpertea/gffread) |
+| miniprot          | 0.13     | [miniprot](https://github.com/lh3/miniprot) |
+| bedtools          | 2.31.1   | [bedtools](https://bedtools.readthedocs.io/) |
+| diamond           | 2.1.9    | [diamond](https://github.com/bbuchfink/diamond) |
+| gffcompare        | 0.12.6   | [gffcompare](https://ccb.jhu.edu/software/stringtie/gffcompare.shtml) |
+| Python 3          | 3.10.14  | [python.org](https://www.python.org/) |
+| pandas            | 2.2.1    | [pandas](https://pandas.pydata.org/) |
+| biopython         | 1.83     | [biopython](https://biopython.org/) |
+| pyfastx           | 2.1.0    | [pyfastx](https://github.com/lmdu/pyfastx) |
+| Helixer           | 0.3.2    | [Helixer](https://github.com/weberlab-hhu/Helixer) |
+
+---
