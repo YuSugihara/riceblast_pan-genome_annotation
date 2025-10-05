@@ -25,14 +25,14 @@ The following software and Python packages are required to run the pipeline. Eac
 
 ## Table of Contents
 
-  - [0. Build secretome dataset](docs/0_build_secretome_dataset.md)
-  - [1. miniprot searches (00_miniprot)](docs/1_miniprot_searches.md)
-  - [2. Extract CDS from each source (10_cds)](docs/2_extract_cds_from_each_source.md)
-  - [3. QC each GFF (20_gff_qc)](docs/3_qc_each_gff.md)
-  - [4. Filter gene models (30_filtered_gff)](docs/4_filter_gene_models.md)
-  - [5. Remove overlaps to define non-redundant gene sets (40_non_overlap_gff)](docs/5_remove_overlaps_to_define_non_redundant_gene_sets.md)
-  - [6. Retain characterized proteins (Helixer ↔ 70-15 RefSeq)](docs/6_retain_characterized_proteins.md)
-  - [7. Helixer-unique secreted proteins overlapping BRAKER (50_helixer_uniq_secreted_proteins)](docs/7_helixer_uniq_secreted_proteins.md)
-  - [8. Merge all evidence and rename IDs (60_merged)](docs/8_merge_all_evidence_and_rename_ids.md)
-  - [9. Export final sequences (70_extracted_seq)](docs/9_export_final_sequences.md)
+  - [0. Build secretome dataset](0_build_secretome_dataset.md)
+  - [1. miniprot searches (00_miniprot)](1_miniprot_searches.md)
+  - [2. Extract CDS from each source (10_cds)](2_extract_cds_from_each_source.md)
+  - [3. QC each GFF (20_gff_qc)](3_qc_each_gff.md)
+  - [4. Filter gene models (30_filtered_gff)](4_filter_gene_models.md)
+  - [5. Remove overlaps to define non-redundant gene sets (40_non_overlap_gff)](5_remove_overlaps_to_define_non_redundant_gene_sets.md)
+  - [6. Retain characterized proteins (Helixer ↔ 70-15 RefSeq)](6_retain_characterized_proteins.md)
+  - [7. Helixer-unique secreted proteins overlapping BRAKER (50_helixer_uniq_secreted_proteins)](7_helixer_uniq_secreted_proteins.md)
+  - [8. Merge all evidence and rename IDs (60_merged)](8_merge_all_evidence_and_rename_ids.md)
+  - [9. Export final sequences (70_extracted_seq)](9_export_final_sequences.md)
 
